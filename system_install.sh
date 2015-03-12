@@ -24,7 +24,8 @@ DSTROOT_ETC="${DSTROOT%/}/etc"
 target_owner="${3:--}"
 [ "${target_owner}" != "-" ] || target_owner="0:0"
 
-: ${ROOT:=${4:-${DSTROOT}}}
+ROOT="${4-${ROOT:-${DSTROOT}}}"
+
 set --
 
 . "${TBT_PRJROOT:-${SRCROOT}}/functions.sh" || exit 8

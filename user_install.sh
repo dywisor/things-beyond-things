@@ -30,7 +30,7 @@ else
    target_owner="${3}"
 fi
 
-: ${ROOT:=${4-}}
+ROOT="${4-${ROOT-}}"
 
 set --
 
