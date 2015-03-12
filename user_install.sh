@@ -15,7 +15,7 @@ case "${1-}" in
 esac
 
 MODE=user
-DEREF_UNKNOWN_AS_ROOT=n
+: ${DEREF_UNKNOWN_AS_ROOT:=n}
 SRCROOT="${1:?missing <srcroot> arg.}"
 DSTHOME="${2:?missing <dstroot> arg.}"
 DSTCFGDIR="${DSTHOME}/.config"

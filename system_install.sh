@@ -15,7 +15,7 @@ case "${1-}" in
 esac
 
 MODE=system
-DEREF_UNKNOWN_AS_ROOT=y
+: ${DEREF_UNKNOWN_AS_ROOT:=y}
 SRCROOT="${1:?missing <srcroot> arg.}"
 DSTROOT="${2:?missing <dstroot> arg.}"
 DSTROOT_ETC="${DSTROOT%/}/etc"
