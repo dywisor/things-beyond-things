@@ -301,7 +301,7 @@ _permtab_deref_file_owner() {
       fi
    fi
 
-   if [ "${DEREF_FAIL_TO_ROOT:-n}" ]; then
+   if [ "${DEREF_UNKNOWN_AS_ROOT:-n}" = "y" ]; then
       : ${uid:=0}
       : ${gid:=0}
 
