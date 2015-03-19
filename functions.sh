@@ -30,6 +30,14 @@ __qcmd__() { "${@}" 1>/dev/null 2>&1; }
 autodie()  { "${@}" || die "command '${*}' returned ${?}." ${?}; }
 fi
 
+## int test_fs_lexists ( fspath )
+##
+##  Returns 0 if %fspath exists (possibly as broken symlink), else 1.
+##
+test_fs_lexists() {
+   [ -e "${1}" ] || [ -h "${1}" ]
+}
+
 ## @autodie target_chown ( fspath, **target_owner )
 ##
 ##  Changes the owner of %fspath to %target_owner.
@@ -398,8 +406,7 @@ _do_apply_permtab() {
    case "${file_type}" in
       [fFdD]'?')
          # bogus: F?, D? := "create if exists"
-         [ -e "${file_path_abs}" ] || \
-         [ -h "${file_path_abs}" ] || return 0
+         test_fs_lexists "${file_path_abs}" || return 0
 
          file_type="${file_type%\?}"
       ;;
@@ -445,4 +452,72 @@ _do_apply_permtab() {
 ## apply_permtab ( abspath_root, relpath_root, infile )
 apply_permtab() {
    iter_permtab "${1:?}" "${2:?}" "${3:?}" _do_apply_permtab
+}
+
+## @autodie _run_postcopy_script ( script_basename, **SRCROOT, **S, **D )
+##
+_run_postcopy_script() {
+   if [ -f "${SRCROOT:?}/${1:?}.sh" ]; then
+      ( . "${SRCROOT:?}/${1:?}.sh"; ) || die "Failed to run ${1}!"
+   fi
+}
+
+## @autodie default_file_install (
+##    srcdir_rel, dstdir, ["--", *extra_postcopy_script_names],
+##    **MODE, **SRCROOT
+## )
+##
+default_file_install() {
+   local S
+   local D
+
+   S="${SRCROOT:?}/${1:?}"
+   D="${2:?}"
+   shift 2 || die
+
+   if [ ${#} -gt 0 ]; then
+      [ "${1:-X}" = "--" ] || die "default_file_install(): Bad usage."
+      shift || die
+   fi
+
+   [ -d "${S}" ] || return 0
+
+   target_copytree "${S}" "${D}"
+
+   _run_postcopy_script postcopy
+
+   set -- "${@}" "${MODE?}"
+   while [ ${#} -gt 0 ]; do
+      [ -z "${1}" ] ||  _run_postcopy_script "postcopy_${1}"
+      shift
+   done
+}
+
+## helper functions for postcopy scripts
+
+## @autodie halfway_safe_symlink ( abs_link_target_file, link_target, link )
+##  "ln -s -- %link_target %link || cp -- %abs_link_target_file %link"
+##
+halfway_safe_symlink() {
+   : "${1:?}" "${2:?}" "${3:?}"
+
+   if [ -h "${3}" ]; then
+      autodie rm -- "${3}"
+   elif [ ! -e "${3}" ]; then
+      :
+   elif [ -e "${3}.dist" ]; then
+      die "Cannot move ${3}"
+   else
+      autodie mv -- "${3}" "${3}.dist"
+   fi
+
+   __cmd__ ln -s -- "${2}" "${3}" || \
+   target_copyfile "${1}" "${3}"
+}
+
+## @autodie dst_halfway_safe_symlink ( link_target_rel, link_rel )
+##  IS halfway_safe_symlink (%D/%link_target_rel, %link_target_rel, %D/link_rel)
+##
+dst_halfway_safe_symlink() {
+   halfway_safe_symlink "${D}/${1:?}" "${1:?}" "${D}/${2:?}"
 }

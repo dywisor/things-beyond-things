@@ -11,7 +11,11 @@ case "${1-}" in
 esac
 
 case "${1-}" in
-   '-h'|'--help') exit 0 ;;
+   '-h'|'--help')
+      printf '%s\n' \
+         "Usage: system_install [-p|--pretend] <srcroot> <dstroot> [<force_owner> [<root>]]"
+      exit 0
+   ;;
 esac
 
 MODE=system
@@ -32,16 +36,7 @@ set --
 [ -d "${DSTROOT_ETC}" ] || target_dodir "${DSTROOT_ETC}"
 
 ## copy config
-S="${SRCROOT}/sysfiles"
-D="${DSTROOT_ETC}"
-if [ -d "${S}" ]; then
-   target_copytree "${SRCROOT}/sysfiles" "${DSTROOT_ETC}"
-
-   if [ -f "${SRCROOT}/postcopy.sh" ]; then
-      . "${SRCROOT}/postcopy.sh" || die "Failed to run postcopy.sh!"
-   fi
-fi
-
+default_file_install sysfiles "${DSTROOT_ETC}" -- config_files
 
 ## apply permissions read from permtab
 apply_permtab "${DSTROOT}" "${DSTROOT_ETC}" "${SRCROOT}/permtab.system"

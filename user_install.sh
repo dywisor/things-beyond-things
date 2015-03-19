@@ -11,7 +11,11 @@ case "${1-}" in
 esac
 
 case "${1-}" in
-   '-h'|'--help') exit 0 ;;
+   '-h'|'--help')
+      printf '%s\n' \
+         "Usage: user_install [-p|--pretend] <srcroot> <dstroot> [<owner> [<root>]]"
+      exit 0
+   ;;
 esac
 
 MODE=user
@@ -38,15 +42,7 @@ set --
 
 
 ## copy .config to $DSTCFGDIR
-S="${SRCROOT}/files"
-D="${DSTCFGDIR}"
-if [ -d "${S}" ]; then
-   target_copytree "${SRCROOT}/files" "${DSTCFGDIR}"
-
-   if [ -f "${SRCROOT}/postcopy.sh" ]; then
-      . "${SRCROOT}/postcopy.sh" || die "Failed to run postcopy.sh!"
-   fi
-fi
+default_file_install files "${DSTCFGDIR}" -- config_files
 
 ## install dotfiles in $DSTHOME
 target_dodir "${DSTCFGDIR}"
